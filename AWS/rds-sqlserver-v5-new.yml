@@ -1,0 +1,741 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Template to create SQL RDS instances.
+Parameters:
+  SiglaApp:
+    Type: String
+    Description: Sigla de tres digitos de Nombre de App o Vacio si es generico.
+    Default: "gral"
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Description: The ID of the VPC used to deploy the resources in
+  EnvironmentValue:
+    AllowedValues:
+      - "dev"
+      - "tst"
+      - "prod"
+    Default: "dev"
+    Description: "What environment is this?"
+    Type: String
+  RDSInstanceNumber:
+    Type: String
+    Description: sufix for instance
+    AllowedValues:
+      - "01"
+      - "02"
+      - "03"
+      - "04"
+    Default: "01"
+  RDSComercialVersionInput:
+    #Este valor depende del valor RDSEngineVersion.
+    #hay que ver como en base al valor de version, obtener este valor
+    Type: String
+    Description: MSSQL Database Commercial  Version.
+    ConstraintDescription: Must select a MSSQL Version.
+    AllowedValues:
+      - "MSSQL2019"
+      - "MSSQL2017"
+      - "MSSQL2016"
+      - "MSSQL2014"
+    Default: "MSSQL2019"
+  RDSMultiAZ:
+    Type: String
+    Description: Warning! This option only should be for Production or a particular test.
+    AllowedValues:
+      - "true"
+      - "false"
+    Default: "false"
+
+Mappings:
+  Environments:
+    ApplicationName:
+      value: "app-rds-ss"
+    dev:
+      RDSInstanceClass: db.r5.xlarge
+      RDSSubnetIds:
+        - subnet-0fa547fd8e9349da1
+        - subnet-02f288a712ce76c5e
+        - subnet-02a19c78e618bd80f
+      RDSEnvironmentPrefix: "dev"
+      RDSStorageType: "gp2"
+      #RDSMultiAZ: "false"
+      RDSEngine: "sqlserver-web"
+      RDSAllocatedStorage: 50
+      RDSKMSKeyARN: "3d190397-efd0-4240-837c-d6fdab2bff58"
+      CPURDSAlarmSNS: "arn:aws:sns:us-east-1:875766450028:RDSAlarmNotificationDBA"
+      FreeSpaceRDSAlarmSNS: "arn:aws:sns:us-east-1:875766450028:RDSAlarmNotificationDBA"
+      MonRolArn: "arn:aws:iam::875766450028:role/rds-monitoring-role"
+      #SGId: "sg-0b77e5956f2ec58c2"
+      PrefixList: "pl-01a336608126df081" #rds-dba-sotp-pl
+      EnablePerfInsights: false
+      #RetentionPerfInsights: ""
+      AutOff: "true"
+      RDSKMSKeyName: "RDSKey"
+      DomainDs: "d-90674f561b"
+      DomainIAMRoleNameDs: "app-dev-rds-directoryservices"
+    tst:
+      RDSInstanceClass: db.m5.large
+      RDSSubnetIds:
+        - subnet-084f473f6e3ea56f5
+        - subnet-022b0d537b8c810d6
+        - subnet-042c06adf60ccead8
+      RDSEnvironmentPrefix: "tst"
+      RDSStorageType: "gp2"
+      #RDSMultiAZ: "false"
+      RDSEngine: "sqlserver-web"
+      RDSAllocatedStorage: 50
+      RDSKMSKeyARN: "d8338250-ca88-4685-ae1c-438e54dd7f7d"
+      CPURDSAlarmSNS: "arn:aws:sns:us-east-1:705505919229:RDSAlarmNotificationDBA-Test"
+      FreeSpaceRDSAlarmSNS: "arn:aws:sns:us-east-1:705505919229:RDSAlarmNotificationDBA-Test"
+      MonRolArn: "arn:aws:iam::705505919229:role/rds-monitoring-role"
+      PrefixList: "pl-0607bfd4e555ebcab" #rds-dba-sotp-pl
+      EnablePerfInsights: false
+      #RetentionPerfInsights: 0
+      AutOff: "true"
+      RDSKMSKeyName: "RDS_Test_Key"
+      DomainDs: "d-90674f56d6"
+      DomainIAMRoleNameDs: "app-tst-rds-directoryservices"
+    prod:
+      RDSInstanceClass: db.m5.xlarge
+      RDSSubnetIds:
+        - subnet-033ecd7bd47fe7a81
+        - subnet-0e8cdcc898246ecdc
+        - subnet-057c4595110789e34
+      RDSEnvironmentPrefix: "prd"
+      RDSStorageType: "gp2"
+      #RDSMultiAZ: "true"
+      RDSEngine: "sqlserver-se"
+      RDSAllocatedStorage: 80
+      RDSKMSKeyARN: "3a38687c-5532-4870-89b5-c2dd05fb23e6"
+      CPURDSAlarmSNS: "arn:aws:sns:us-east-1:543509392261:SNS-Alarm-notification-RDS"
+      FreeSpaceRDSAlarmSNS: "arn:aws:sns:us-east-1:543509392261:SNS-Alarm-notification-RDS"
+      MonRolArn: "arn:aws:iam::543509392261:role/rds-monitoring-role"
+      PrefixList: "pl-03aadf2532e56b4de" #rds-dba-sotp-pl
+      EnablePerfInsights: true
+      #RetentionPerfInsights: 30
+      AutOff: "false"
+      RDSKMSKeyName: "RDSKey"
+      DomainDs: "d-90674f56d5"
+      DomainIAMRoleNameDs: "rds-directoryservice-access-role"
+    DBACIDRBlock:
+      value: "10.0.11.0/24"
+    RDSAdminUsername:
+      value: "admin"
+    #RDSKMSKeyName:
+    #  value: "RDS_Test_Key"
+    RDSTimezone:
+      value: "Argentina Standard Time"
+    MSSQL2014:
+      RDSEngineVersion: "12.00.6293.0.v1"
+      RDSOptionSQLEngineVersion: "12.00"
+      RDSComercialVersion: 14
+    MSSQL2016:
+      RDSEngineVersion: "13.00.5882.1.v1"
+      RDSOptionSQLEngineVersion: "13.00"
+      RDSComercialVersion: 16
+    MSSQL2017:
+      RDSEngineVersion: "14.00.3401.7.v1"
+      RDSOptionSQLEngineVersion: "14.00"
+      RDSComercialVersion: 17
+    MSSQL2019:
+      RDSEngineVersion: "15.00.4153.1.v1"
+      RDSOptionSQLEngineVersion: "15.00"
+      RDSComercialVersion: 19
+    RDSBackupRetentionPeriod:
+      value: 0
+    RDSBackupKMSKeyAlias:
+      value: "alias/aws/rds"
+    ###Parametros de Alertas
+    PreferredMaintenanceWindow:
+      value: "Sun:06:00-Sun:07:00"
+    RDSCPUAlarmThresholdNumber:
+      value: "75"
+    RDSFreeSpaceAlarmThresholdNumber:
+      value: "10737418240"
+    FreeSpaceThresholdCondition:
+      value: "LessThanOrEqualToThreshold"
+    FreeSpaceStatistic:
+      value: "Average"
+    FreeSpacePeriod:
+      value: 60
+    FreeSpaceDatapoints:
+      value: 1
+    CPUThresholdCondition:
+      value: "GreaterThanThreshold"
+    CPUStatistic:
+      value: "Average"
+    CPUPeriod:
+      value: 60
+    CPUDatapoints:
+      value: 1
+
+Resources:
+  PrivateDBSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Sub
+        - ${ApplicationName}-sg
+        - ApplicationName:
+            !Join [
+              "-",
+              [
+                !FindInMap [Environments, ApplicationName, value],
+                !Ref EnvironmentValue,
+                !FindInMap [
+                  Environments,
+                  !Ref RDSComercialVersionInput,
+                  RDSComercialVersion,
+                ],
+                !Ref SiglaApp,
+                !Ref RDSInstanceNumber,
+              ],
+            ]
+      GroupDescription: Allows access to private instances
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - Description: Allow access to RDS from the DBA CIDR range to perform DBA tasks + SOTP
+          IpProtocol: tcp
+          FromPort: 1433
+          ToPort: 1433
+          SourcePrefixListId:
+            !FindInMap [Environments, !Ref EnvironmentValue, PrefixList]
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - ${ApplicationName}-sg
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+        - Key: ProductName
+          Value: !Sub
+            - ${ApplicationName}
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+        - Key: Environment
+          Value: !Ref EnvironmentValue
+        - Key: Rds
+          Value: !Sub
+            - ${ApplicationName}
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+
+  RDSDBSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupDescription: This is where the private subnets groups will be defined
+      DBSubnetGroupName: !Sub
+        - ${ApplicationName}-SubnetGroup
+        - ApplicationName:
+            !Join [
+              "-",
+              [
+                !FindInMap [Environments, ApplicationName, value],
+                !Ref EnvironmentValue,
+                !FindInMap [
+                  Environments,
+                  !Ref RDSComercialVersionInput,
+                  RDSComercialVersion,
+                ],
+                !Ref SiglaApp,
+                !Ref RDSInstanceNumber,
+              ],
+            ]
+      SubnetIds: !FindInMap [Environments, !Ref EnvironmentValue, RDSSubnetIds]
+      Tags:
+        - Key: ProductName
+          Value: !Sub
+            - ${ApplicationName}-SubnetGroup
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+        - Key: Environment
+          Value: !Ref EnvironmentValue
+        - Key: Rds
+          Value: !Sub
+            - ${ApplicationName}
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+  #This is a Secret resource with a randomly generated password in its SecretString JSON.
+  MsRDSInstanceRotationSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub
+        - ${ApplicationName}-AdminUserSecret
+        - ApplicationName:
+            !Join [
+              "-",
+              [
+                !FindInMap [Environments, ApplicationName, value],
+                !Ref EnvironmentValue,
+                !FindInMap [
+                  Environments,
+                  !Ref RDSComercialVersionInput,
+                  RDSComercialVersion,
+                ],
+                !Ref SiglaApp,
+                !Ref RDSInstanceNumber,
+              ],
+            ]
+      Description: RDS credentials secret for MsSQL
+      GenerateSecretString:
+        SecretStringTemplate: !Sub
+          - '{"username": "${RDSAdmUsername}"}'
+          - RDSAdmUsername: !FindInMap [Environments, RDSAdminUsername, value]
+        GenerateStringKey: "password"
+        PasswordLength: 16
+        ExcludeCharacters: '"@/\'
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - ${ApplicationName}-AdminUserSecret
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+        - Key: ProductName
+          Value: !Sub
+            - ${ApplicationName}-SecretsManager
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+        - Key: Environment
+          Value: !Ref EnvironmentValue
+        - Key: Rds
+          Value: !Sub
+            - ${ApplicationName}
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+
+  RDSDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      #Integracion con AD
+      Domain: !FindInMap [Environments, !Ref EnvironmentValue, DomainDs]
+      DomainIAMRoleName:
+        !FindInMap [Environments, !Ref EnvironmentValue, DomainIAMRoleNameDs]
+      # Enable Enhaceed Monitoring
+      MonitoringInterval: "10"
+      #MonitoringRoleArn: arn:aws:iam::875766450028:role/rds-monitoring-role
+      MonitoringRoleArn:
+        !FindInMap [Environments, !Ref EnvironmentValue, MonRolArn]
+      # Log Types to cludwachLogs
+      EnableCloudwatchLogsExports: [agent, error]
+      # Enable Performance Insights
+      EnablePerformanceInsights:
+        !FindInMap [Environments, !Ref EnvironmentValue, EnablePerfInsights]
+      #PerformanceInsightsRetentionPeriod: !FindInMap [Environments, !Ref EnvironmentValue, RetentionPerfInsights]
+      AutoMinorVersionUpgrade: false
+      PreferredMaintenanceWindow:
+        !FindInMap [Environments, PreferredMaintenanceWindow, value]
+      DBInstanceIdentifier:
+        !Join [
+          "-",
+          [
+            !FindInMap [Environments, ApplicationName, value],
+            !Ref EnvironmentValue,
+            !FindInMap [
+              Environments,
+              !Ref RDSComercialVersionInput,
+              RDSComercialVersion,
+            ],
+            !Ref SiglaApp,
+            !Ref RDSInstanceNumber,
+          ],
+        ]
+      AllocatedStorage:
+        !FindInMap [Environments, !Ref EnvironmentValue, RDSAllocatedStorage]
+      StorageType:
+        !FindInMap [Environments, !Ref EnvironmentValue, RDSStorageType]
+      StorageEncrypted: true
+      KmsKeyId: !FindInMap [Environments, !Ref EnvironmentValue, RDSKMSKeyARN]
+      Timezone: !FindInMap [Environments, RDSTimezone, value]
+      BackupRetentionPeriod:
+        !FindInMap [Environments, RDSBackupRetentionPeriod, value]
+      Engine: !FindInMap [Environments, !Ref EnvironmentValue, RDSEngine]
+      EngineVersion:
+        !FindInMap [
+          Environments,
+          !Ref RDSComercialVersionInput,
+          RDSEngineVersion,
+        ]
+      DBInstanceClass:
+        !FindInMap [Environments, !Ref EnvironmentValue, RDSInstanceClass]
+      OptionGroupName: !Ref RDSDBOptionGroup
+      LicenseModel: license-included
+      DBSubnetGroupName: !Ref RDSDBSubnetGroup
+      VPCSecurityGroups:
+        - !GetAtt PrivateDBSecurityGroup.GroupId
+      MasterUsername: !Sub "{{resolve:secretsmanager:${MsRDSInstanceRotationSecret}::username}}"
+      #MasterUsername: "admin"
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${MsRDSInstanceRotationSecret}::password}}"
+      #MasterUserPassword: "admin1234"
+      MultiAZ: !Ref RDSMultiAZ
+      PubliclyAccessible: false
+      CopyTagsToSnapshot: true
+      Tags:
+        - Key: ProductName
+          Value: !FindInMap [Environments, ApplicationName, value]
+        - Key: Environment
+          Value: !Ref EnvironmentValue
+        - Key: Rds
+          Value: !Sub
+            - ${ApplicationName}
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+        - Key: BackupDaily
+          Value: "True"
+        - Key: AutoOff
+          Value: !FindInMap [Environments, !Ref EnvironmentValue, AutOff]
+
+  RDSDBOptionGroup:
+    Type: AWS::RDS::OptionGroup
+    Properties:
+      EngineName: !FindInMap [Environments, !Ref EnvironmentValue, RDSEngine]
+      MajorEngineVersion:
+        !FindInMap [
+          Environments,
+          !Ref RDSComercialVersionInput,
+          RDSOptionSQLEngineVersion,
+        ]
+      OptionGroupDescription: SQL Server Native Backup and Restore
+      OptionConfigurations:
+        - OptionName: SQLSERVER_BACKUP_RESTORE
+          OptionSettings:
+            - Name: IAM_ROLE_ARN
+              Value: !GetAtt RDSOptionGroupIAMRole.Arn
+      Tags:
+        - Key: ProductName
+          Value: !Sub
+            - ${ApplicationName}-OptionGroup
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+        - Key: Environment
+          Value: !Ref EnvironmentValue
+        - Key: Rds
+          Value: !Sub
+            - ${ApplicationName}
+            - ApplicationName:
+                !Join [
+                  "-",
+                  [
+                    !FindInMap [Environments, ApplicationName, value],
+                    !Ref EnvironmentValue,
+                    !FindInMap [
+                      Environments,
+                      !Ref RDSComercialVersionInput,
+                      RDSComercialVersion,
+                    ],
+                    !Ref SiglaApp,
+                    !Ref RDSInstanceNumber,
+                  ],
+                ]
+
+  RDSOptionGroupIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub
+        - ${ApplicationName}-OptionGroupIAMRole
+        - ApplicationName:
+            !Join [
+              "-",
+              [
+                !FindInMap [Environments, ApplicationName, value],
+                !Ref EnvironmentValue,
+                !FindInMap [
+                  Environments,
+                  !Ref RDSComercialVersionInput,
+                  RDSComercialVersion,
+                ],
+                !Ref SiglaApp,
+                !Ref RDSInstanceNumber,
+              ],
+            ]
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "rds.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: sql-native-backup-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                  - kms:GenerateDataKey
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                Resource:
+                  - !Sub "arn:aws:s3:::repo-rds-backup-${EnvironmentValue}"
+                  - !Sub "arn:aws:s3:::repo-backup-mensuales-${EnvironmentValue}"
+                  - !Sub
+                    - "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/alias/${RDSBkpKMSKeyAlias}"
+                    - RDSBkpKMSKeyAlias:
+                        !FindInMap [Environments, RDSBackupKMSKeyAlias, value]
+                  - !Sub
+                    - "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/alias/${RDSKMSKeyNameValue}"
+                    - RDSKMSKeyNameValue:
+                        !FindInMap [
+                          Environments,
+                          !Ref EnvironmentValue,
+                          RDSKMSKeyName,
+                        ]
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                  - s3:GetObjectMetaData
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListMultipartUploadParts
+                  - s3:AbortMultipartUpload
+                Resource:
+                  - !Sub "arn:aws:s3:::repo-rds-backup-${EnvironmentValue}"
+                  - !Sub "arn:aws:s3:::repo-rds-backup-${EnvironmentValue}/rds-backups/*"
+                  - !Sub "arn:aws:s3:::repo-rds-backup-prod/RDS-bkp-Mensuales-Veeam/*"
+                  - !Sub "arn:aws:s3:::repo-backup-mensuales-prod/RDS/*"
+
+      Path: "/service-role/"
+
+  RDSCPUAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmDescription: "CPU usage is high on RDS"
+      AlarmName: !Sub
+        - "SPV_RDS_${ApplicationName}_PlataformaCloud_CPUUtilization_CPUAlarmThresholdNum" #Queda hard code el nombre. no me permite dos var para el sub.
+        - ApplicationName:
+            !Join [
+              "-",
+              [
+                !FindInMap [Environments, ApplicationName, value],
+                !Ref EnvironmentValue,
+                !FindInMap [
+                  Environments,
+                  !Ref RDSComercialVersionInput,
+                  RDSComercialVersion,
+                ],
+                !Ref SiglaApp,
+                !Ref RDSInstanceNumber,
+              ],
+            ]
+      AlarmActions:
+        - !FindInMap [Environments, !Ref EnvironmentValue, CPURDSAlarmSNS]
+      OKActions:
+        - !FindInMap [Environments, !Ref EnvironmentValue, CPURDSAlarmSNS]
+      MetricName: "CPUUtilization"
+      Namespace: "AWS/RDS"
+      Statistic: !FindInMap [Environments, CPUStatistic, value]
+      Period: !FindInMap [Environments, CPUPeriod, value]
+      EvaluationPeriods: !FindInMap [Environments, CPUDatapoints, value]
+      ComparisonOperator:
+        !FindInMap [Environments, CPUThresholdCondition, value]
+      Threshold: !FindInMap [Environments, RDSCPUAlarmThresholdNumber, value]
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref RDSDBInstance
+
+  RDSFreeSpaceAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmDescription: "Free space is low on RDS"
+      AlarmName: !Sub
+        - "SPV_RDS_${ApplicationName}_PlataformaCloud_FreeStorageSpace_SpaceAlarmThresholdNum" #Queda hard code el nombre. no me permite dos var para el sub.
+        - ApplicationName:
+            !Join [
+              "-",
+              [
+                !FindInMap [Environments, ApplicationName, value],
+                !Ref EnvironmentValue,
+                !FindInMap [
+                  Environments,
+                  !Ref RDSComercialVersionInput,
+                  RDSComercialVersion,
+                ],
+                !Ref SiglaApp,
+                !Ref RDSInstanceNumber,
+              ],
+            ]
+      AlarmActions:
+        - !FindInMap [Environments, !Ref EnvironmentValue, FreeSpaceRDSAlarmSNS]
+      OKActions:
+        - !FindInMap [Environments, !Ref EnvironmentValue, FreeSpaceRDSAlarmSNS]
+      MetricName: "FreeStorageSpace"
+      Namespace: "AWS/RDS"
+      Statistic: !FindInMap [Environments, FreeSpaceStatistic, value]
+      Period: !FindInMap [Environments, FreeSpacePeriod, value]
+      EvaluationPeriods: !FindInMap [Environments, FreeSpaceDatapoints, value]
+      Threshold:
+        !FindInMap [Environments, RDSFreeSpaceAlarmThresholdNumber, value]
+      ComparisonOperator:
+        !FindInMap [Environments, FreeSpaceThresholdCondition, value]
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref RDSDBInstance
+
+Outputs:
+  DBSecurityGroup:
+    Description: Security Group for instance RDS
+    Value: !GetAtt PrivateDBSecurityGroup.GroupId
+    Export:
+      Name: !Sub
+        - ${AWS::StackName}-sg-${EnvPrefix}-DBSgId
+        - EnvPrefix:
+            !FindInMap [
+              Environments,
+              !Ref EnvironmentValue,
+              RDSEnvironmentPrefix,
+            ]
+  RDSSQLEndpoint:
+    Description: MsSQL RDS Instance endpoint
+    Value: !GetAtt RDSDBInstance.Endpoint.Address
+    Export:
+      Name: !Sub
+        - ${AWS::StackName}-rds-${EnvPrefix}-MsSQLEndpoint
+        - EnvPrefix:
+            !FindInMap [
+              Environments,
+              !Ref EnvironmentValue,
+              RDSEnvironmentPrefix,
+            ]
+  MsSQLRDSSecret:
+    Description: Secrets Manager rotation secret for RDS Database for admin user
+    Value: !Ref MsRDSInstanceRotationSecret
+    Export:
+      Name: !Sub
+        - ${AWS::StackName}-sm-${EnvPrefix}-MsSQLRDSSecret
+        - EnvPrefix:
+            !FindInMap [
+              Environments,
+              !Ref EnvironmentValue,
+              RDSEnvironmentPrefix,
+            ]

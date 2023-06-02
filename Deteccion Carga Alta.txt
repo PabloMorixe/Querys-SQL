@@ -1,0 +1,305 @@
+USE [msdb]
+GO
+
+/****** Object:  Job [DBA_Deteccion_CargaAlta]    Script Date: 1/2/2023 12:54:09 ******/
+BEGIN TRANSACTION
+DECLARE @ReturnCode INT
+SELECT @ReturnCode = 0
+/****** Object:  JobCategory [[Uncategorized (Local)]]    Script Date: 1/2/2023 12:54:09 ******/
+IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
+BEGIN
+EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+
+END
+
+DECLARE @jobId BINARY(16)
+EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'DBA_Deteccion_CargaAlta', 
+		@enabled=1, 
+		@notify_level_eventlog=0, 
+		@notify_level_email=0, 
+		@notify_level_netsend=0, 
+		@notify_level_page=0, 
+		@delete_level=0, 
+		@description=N'No description available.', 
+		@category_name=N'[Uncategorized (Local)]', 
+		@owner_login_name=N'GSCORP\PM43314adm', @job_id = @jobId OUTPUT
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [Get_role]    Script Date: 1/2/2023 12:54:10 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'Get_role', 
+		@step_id=1, 
+		@cmdexec_success_code=0, 
+		@on_success_action=3, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'declare @servername varchar(max);
+
+set @servername  =  (select @@SERVERNAME);
+
+
+declare @SQL varchar(max);
+
+
+select @SQL = ''
+
+CREATE FUNCTION [dbo].[is_primary_node_of_''+@servername+'']()
+RETURNS bit
+AS
+BEGIN;
+  DECLARE @PrimaryReplica sysname; 
+
+  SELECT
+                @PrimaryReplica = hags.primary_replica
+  FROM          sys.dm_hadr_availability_group_states hags
+  INNER JOIN    sys.availability_groups ag 
+                ON ag.group_id = hags.group_id
+  WHERE 
+            ag.name = ''''''+ @servername +'''''';
+
+  IF UPPER(@PrimaryReplica) =  UPPER(@@SERVERNAME)
+    RETURN 1; -- primary
+
+    RETURN 0; -- not primary
+END; 
+''
+Exec (@SQL)
+
+declare @servername varchar(max);
+
+set @servername  =  (select @@SERVERNAME);
+
+
+declare @SQL varchar(max);
+
+
+select @SQL = ''
+USE [master]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE FUNCTION [dbo].[is_primary_node_of_''+
+
+
+@servername
+
+
++'']()
+RETURNS bit
+AS
+BEGIN;
+  DECLARE @PrimaryReplica sysname; 
+
+  SELECT
+                @PrimaryReplica = hags.primary_replica
+  FROM          sys.dm_hadr_availability_group_states hags
+  INNER JOIN    sys.availability_groups ag 
+                ON ag.group_id = hags.group_id
+  WHERE 
+            ag.name = 
+			
+''''''+ @servername +'''''';
+
+  IF UPPER(@PrimaryReplica) =  UPPER(@@SERVERNAME)
+    RETURN 1; -- primary
+
+    RETURN 0; -- not primary
+END; 
+
+ 
+GO''
+
+
+Exec @SQL
+
+', 
+		@database_name=N'master', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [2]    Script Date: 1/2/2023 12:54:10 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'2', 
+		@step_id=2, 
+		@cmdexec_success_code=0, 
+		@on_success_action=1, 
+		@on_success_step_id=0, 
+		@on_fail_action=2, 
+		@on_fail_step_id=0, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'--Query envia mail de alerta por alta carga transaccional 
+
+DECLARE
+@EmailSubject varchar(100),
+@TextTitle varchar(100),
+@SubTextTitle varchar(100),
+@TableHTML nvarchar(max),
+@Body nvarchar(max),
+@DBName varchar(50),
+@ServerName varchar(50),
+@texto1 varchar(100),
+@texto2 varchar(100),
+@Alerta int  ,
+@resultado float
+
+
+Set @Alerta =  ''15''
+select @ServerName = @@servername
+SET @DBName = ''''
+SET @EmailSubject = ''POSIBLE INCIDENTE BFF '' + @ServerName + '' ''
+SET @TextTitle = ''POSIBLE INCIDENTE BFF - ALTA CARGA EN SQL  '' + @ServerName + '' ''
+SET @SubTextTitle = ''Revisar los procesos en curso, '' 
+set @texto1 = ''El umbral esta seteado en ''+ CAST(@Alerta as varchar(100))+''%''
+
+
+
+if OBJECT_ID(N''tempdb..#PocoEspacio'') IS NOT NULL 
+drop table #PocoEspacio
+
+
+Create table #PocoEspacio(
+dbname varchar(50),
+comando varchar(50),
+cantidad int,
+)
+
+insert into #PocoEspacio    
+SELECT  sd.name DB_Name, 
+        cmd Command,
+       count(*) as cant
+FROM master.dbo.sysprocesses sp 
+JOIN master.dbo.sysdatabases sd ON sp.dbid = sd.dbid
+--WHERE blocked >0
+--WHERE db_id(sd.name) >4
+GROUP BY cmd,sd.name
+order by 1 desc
+
+
+set @resultado = (
+select (SELECT
+count(*) as cant
+FROM master.dbo.sysprocesses sp 
+JOIN master.dbo.sysdatabases sd ON sp.dbid = sd.dbid
+WHERE 
+sp.cmd not like ''%AWAITING COMMAND%'' )* 100 / 
+(SELECT count(*) as cant FROM master.dbo.sysprocesses sp 
+JOIN master.dbo.sysdatabases sd ON sp.dbid = sd.dbid
+) )
+
+set @texto2 = ''El porcentaje de transacciones en curso asciende a '' + cast(@resultado as varchar(100)) + ''%''
+
+
+
+
+SET @TableHTML =
+''<html>''+
+''<head><style>''+
+-- Data cells styles / font size etc
+''td {border:1px solid #ddd;padding-left:5px;padding-right:5px;padding-top:1px;padding-bottom:1px;font-size:10pt}''+
+''</style></head>''+
+''<body>''+
+-- TextTitle style
+''<div style="margin-top:15px; margin-left:15px; margin-bottom:15px; font-weight:bold; font-size:13pt; font-family:calibri;">'' + @TextTitle +''</div>'' +
+-- SubTextTitle style
+''<div style="margin-top:15px; margin-left:15px; margin-bottom:15px; font-weight:bold; font-size:10pt; font-family:calibri;">'' + @SubTextTitle +''</div>''  +
+-- Umbral text style
+''<div style="margin-top:15px; margin-left:15px; margin-bottom:15px; font-weight:bold; font-size:10pt; font-family:calibri;">'' + @texto1 +''</div>''  +
+-- Umbral text style
+''<div style="margin-top:15px; margin-left:15px; margin-bottom:15px; font-weight:bold; font-size:10pt; font-family:calibri;">'' + @texto2 +''</div>''  +
+
+
+
+-- Color and columns names
+''<div style="font-family:verdana; "><table>''+''<tr bgcolor=#00881d>''+
+''<td align=left><font face="calibri" color=White><b>Database Name</b></font></td>''+ -- Database Name
+''<td align=left><font face="calibri" color=White><b>tipo de comando </b></font></td>''+ -- Filegroup Name
+''<td align=center><font face="calibri" color=White><b>recuento </b></font></td>''+ -- Percent Free 
+--''<td align=right><font face="calibri" color=White><b>DisponibleGB</b></font></td>''+ -- DisponibleGB
+''</tr></div>''
+
+
+
+
+
+
+SELECT @Body =(
+SELECT
+td = dbname,
+td = comando,
+td = cantidad
+
+/*
+,td = inequality_columns,
+td = included_columns,
+td = CONVERT(DECIMAL(16,2),overal_impact_value)
+*/
+
+
+FROM #PocoEspacio
+where --PercentFree < @Alerta
+dbname not in (''master'',''model'',''msdb'',''sqlmant'')
+--ORDER BY PercentFree desc-- CONVERT(DECIMAL(16,2), overal_impact_value) desc
+for XML raw(''tr''), elements)
+
+SET @body = REPLACE(@body, ''<td>'', ''<td align=left><font face="calibri">'')
+SET @tableHTML = @tableHTML + @body + ''</table></div></body></html>''
+SET @tableHTML = ''<div style="color:Black; font-size:8pt; font-family:Calibri; width:auto;">'' + @tableHTML + ''</div>''
+
+
+
+
+if (@resultado > @Alerta)
+exec msdb.dbo.sp_send_dbmail
+@profile_name = ''opesqladmin'',
+--@recipients = ''pablo.morixe@supervielle.com.ar'',
+--@recipients = ''ingenieriadedatos@supervielle.com.ar'',
+--@Copy_recipients = ''COEData&AdvancedAnalytics@supervielle.com.ar'',
+@recipients = ''MonitoreoTI@supervielle.com.ar;MobileBanking@supervielle.com.ar;base.datos@supervielle.com.ar;alejandro.duran@supervielle.com.ar;DevOps@supervielle.com.ar'',
+--''base.datos@supervielle.com.ar'',
+@Copy_recipients = ''pablo.morixe@supervielle.com.ar'',
+--@recipients = ''pablo.morixe@supervielle.com.ar'',
+@body = @tableHTML,
+@subject = @emailSubject, 
+@body_format = ''HTML''
+
+
+', 
+		@database_name=N'master', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 2
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'2 mins', 
+		@enabled=1, 
+		@freq_type=4, 
+		@freq_interval=1, 
+		@freq_subday_type=4, 
+		@freq_subday_interval=2, 
+		@freq_relative_interval=0, 
+		@freq_recurrence_factor=0, 
+		@active_start_date=20230110, 
+		@active_end_date=99991231, 
+		@active_start_time=0, 
+		@active_end_time=235959, 
+		@schedule_uid=N'f55de072-7269-4f40-82d8-65e032b36933'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+COMMIT TRANSACTION
+GOTO EndSave
+QuitWithRollback:
+    IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
+EndSave:
+GO
+
+

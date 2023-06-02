@@ -1,0 +1,9 @@
+use msdb
+go
+ALTER ROLE SQLAgentOperatorRole ADD MEMBER gscorp\sql_admins
+GO
+--luego quitar el permiso
+USE msdb
+GO
+ALTER ROLE SQLAgentOperatorRole DROP MEMBER scorp\sql_admins
+GO
