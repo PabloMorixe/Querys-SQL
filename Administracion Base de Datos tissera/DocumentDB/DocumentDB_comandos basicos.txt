@@ -1,0 +1,14 @@
+show dbs -> Muestra las base de datos del cluster
+
+rs0:PRIMARY> use db_catalogo
+switched to db db_catalogo -> Se conecta a la base de datos que queremos gestionar
+
+rs0:PRIMARY> show collections -> muestra las colecciones de ese catalogo al que nos conectamos
+activos
+activos_serverless
+totalizadores
+
+rs0:PRIMARY> db.activos.find() -> muestra los datos del de la coleccion activos
+
+
+

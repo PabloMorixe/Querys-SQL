@@ -1,0 +1,8 @@
+Create the target DB instance
+Create the target PostgreSQL DB instance using either the Amazon RDS console, AWS CLI, or API. Create the instance with the backup retention setting set to 0 and disable Multi-AZ. Doing so allows faster data import. You must create a database on the instance before you can dump the data. The database can have the same name as the database that is contained the dumped data. Alternatively, you can create a database with a different name. In this case, you use the pg_restore command and the -d parameter to restore the data into the newly named database.
+
+For example, the following commands can be used to dump, restore, and rename a database.
+
+pg_dump -Fc -v -h [endpoint of instance] -U [master username] [database] > [database].dump
+createdb [new database name]
+pg_restore -v -h [endpoint of instance] -U [master username] -d [new database name] [database].dump 

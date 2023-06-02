@@ -1,0 +1,179 @@
+GET _cluster/health  
+GET _cluster/state
+Get _cat/nodes
+GET _cat/nodes?v
+GET _cat/shards?v
+
+
+get _cat/indices?pretty
+get _cat/allocation?v 
+
+GET _snapshot/_all
+
+
+
+get _cat/indices?h=h,s,i,id,p,r,dc,dd,ss,creation.date.string
+
+get _cat/indices?h=health,status,index,id,pri,rep,docs.count,docs.deleted,store.size,creation.date.string&v=
+
+
+GET  _cat/indices?h=health,status,index,id,pri,rep,docs.count,docs.deleted,store.size,creation.date.string&s=i
+
+
+GET  _cat/indices?v&h=health,status,index,id,pri,rep,docs.count,docs.deleted,store.size,creation.date.string&s=store.size:desc
+
+GET  _cat/indices?v&h=health,status,shard,index,id,pri,rep,docs.count,docs.deleted,store.size,creation.date.string&s=pri:desc
+
+GET  _cat/shards?v&s=index
+  
+GET  _cat/indices?v&h=health,status,shard,index,id,pri,rep,docs.count,docs.deleted,store.size,creation.date.string&s=creation.date.string:asc
+
+
+GET  _cat/indices?v&h=health,status,shard,index,id,pri,rep,docs.count,docs.deleted,store.size,creation.date.string&s=pri:asc
+
+
+shard prirep
+
+get _cluster/health?pretty
+
+GET /_cluster/settings
+
+GET otel-v1-apm-service-map /_search
+
+GET idd_test_1-29.11.21/_settings
+
+GET idd_test_1-29.11.21/_settings/_ism/policies
+
+_ism/policies/delete_after_1_days
+
+GET _opendistro/_ism/explain/plazo-fijo.api-plazo-fijo-2021.12.13  
+
+GET _cat/allocation?v
+
+
+
+POST _opendistro/_ism/add/idd_test-19.11.21
+{
+  "policy_id": "delete_after_1_days"
+}
+
+
+GET _opendistro/_ism/explain/idd_test_1-09.12.21
+
+
+GET _opendistro/_ism/explain/idd_test_2-29.11.21
+
+
+GET _opendistro/_ism/explain/.idd_test_3-29.11.21
+
+GET _opendistro/_ism/explain/usuarios.bff-usuarios-2021.12.14
+
+GET _opendistro/_ism/explain/tarjetas.api-tarjetas-credito-procesadoras-2021.12.06  
+
+GET _opendistro/_ism/explain/.kibana_-2072201161_pablorodriguezsuperviellecomar_1
+
+
+POST _opendistro/_ism/add/tarjetas.api-tarjetas-credito-procesadoras-2021.12.06  
+{
+  "policy_id": "delete_after_7_days_all"
+}
+
+
+POST _opendistro/_ism/add/*
+{
+  "policy_id": "delete_after_7_days_all"
+}
+
+
+GET /_cluster/settings
+
+
+GET _opendistro/_ism/explain/idd_test_2-13.12.21
+
+
+
+"idd_test*"
+
+PUT /idd_test_2-13.12.21?pretty
+{
+ 
+    "mappings" : {
+        "properties" : {
+            "nombre" : { "type" : "text" },
+            "edad" : { "type" : "integer" },
+			      "deportes" : {"type" : "text" }
+			}
+        }
+    }
+}
+
+PUT /idd_test_6-01.12.21?pretty
+{
+    "settings" : {
+        "number_of_shards" : 2,
+        "number_of_replicas" : 1
+    },
+    "mappings" : {
+        "properties" : {
+            "nombre" : { "type" : "text" },
+            "edad" : { "type" : "integer" },
+			      "deportes" : {"type" : "text" }
+			}
+        }
+    }
+}
+
+
+POST idd_test_1-29.11.21/_doc
+{
+  "nombre": "Test4",
+  "edad":"6",
+  "deportes": [
+      "Futbol",
+      "Rugby",
+      "Tenis"
+    ]
+}
+
+
+
+GET idd_test_1-29.11.21/_search?pretty
+
+
+
+GET idd_test-19.11.21/_search
+{
+  "query": {
+    "constant_score": {
+      "filter": {
+        "bool": {
+          "must": [
+            {
+              "range": {
+                "date": {
+                  "gte": "2021-11-18",
+                  "lte": "2021-11-20",
+                  "format": "YYYY-dd-MM"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+
+
+GET /_search
+{
+  "query": {
+    "range": {
+      "timestamp": {
+        "gte": "now-1d/d",
+        "lte": "now/d"
+      }
+    }
+  }
+}
+
