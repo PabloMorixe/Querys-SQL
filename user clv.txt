@@ -1,0 +1,125 @@
+ADMINISTRACION DE cLUSTER IBM
+
+http://10.1.201.50/
+
+USERID
+PASSW0RD
+
+******************************************************************************
+Administrador
+
+Cal1l3gua
+
+CLSQL05 10.1.1.148
+	ACBL0501
+	ACBL0502
+		ACCL05
+CLSQL04 10.1.1.138
+	ACBL0401
+	ACBL0402
+		ACCL04
+
+******************************************************************************
+
+Dificultad con LEVICOM - ordenes de compra
+
+ web: http://www.levicom.com.ar/ donde no tengo usuario
+
+AVOCENT: https://10.1.201.10 / DONDE NO TENGO USUARIO
+
+		Aca Sebastian entro y fue a ACNT05
+
+		Aplicacion EdcTotal 5.7
+
+		luego verifique en el svr CLSQL04 : la dts :bNexus_txt (la cual se ejecuta cada 30 minutos)
+
+Paso a seguir segun Ricardo H.Nuñez Dpto. Sistemas int.: 1016
+
+	Por favor fijate si el proceso EDC Total se esta ejecutando y la DTS esta funcionando
+	porque me estan reclamando estas que te adjunto que son de ayer a las 6 de la tarde.
+
+	Los pasos son los siguientes:
+	1) si el EDC Total esta funcionando 
+	2) Habira que ver si la DTS esta funcionando 
+	3) Ver en el sitio si estas ordenes figuran leidas o NO, si estan leidas, avisame (yo no tengo internet)
+	 y las reclamo a Levicom para que las desmarque.
+	servidor CLSQL04  se ejecuta la DTS bnexus txt
+
+*********************************************************************************
+	MOBILE	servidor GWMOBILE 
+
+
+admin_mobile
+Fami423Liar756.
+
+usuario: admin_mobile
+clave: Fami423Liar756. (Sensible a mayúsculas y no olvidar el punto al final)
+ip: 192.168.200.50 (desde la red no se llega, esta en una DMZ)
+
+Lo podés remotear desde el switch ip Avocent:
+http://10.1.201.10 --Avocent
+
+	Info:La aplicación se llama Nokia Intellisinc Suite
+	Funciona con Groupwise Mobile.
+	Desde el services.msc podrás ver 4 servicios del Intellisinc, 
+	deberían estár arriba en funcionamiento normal aunque no indica que estén bajando 
+	los mails.
+	Se revisó el tema con la gente de Baynet y no se encontró solución hasta el momento.
+	Se tiró el indicio de mal funcionamiento de la placa de red pero tampoco está 
+	comprobado.
+	Esto es todo lo que sabemos.
+
+
+
+**********************************************************************
+
+	Maquina Virtual
+
+	administrator	
+	Ledesma@06022009
+
+**********************************************************************
+
+	Antivirus
+
+	SOPORTE
+	JENNA09	
+
+	ADMINISTRADOR
+	dell-local
+	compaq
+	compaq-local
+
+**********************************************************************
+	INTERNOS
+
+	ROA 1343
+	GARCIA POSSE 1344
+**********************************************************************
+	NO LLEGO
+	Server ACNT03 
+        la clave del Administrator Local es Pa$$w0rd
+**********************************************************************
+Celular de Guardia
+	1549368322
+
+	interno conputos 1227
+**********************************************************************
+	Emser 
+ 
+https://srv101.ledesma.com.ar
+ 
+ 
+Usuario:Emser
+Password:Ems3rSalc
+
+**********************************************************************
+
+	VNC
+	REAL VNC VIEWER :TECNO
+
+
+	
+
+
+

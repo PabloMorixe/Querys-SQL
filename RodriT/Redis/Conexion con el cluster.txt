@@ -1,0 +1,1 @@
+redis-cli -h apps-dev-redis-cluster-01.jrmbpm.ng.0001.use1.cache.amazonaws.com -p 6379

@@ -1,0 +1,9 @@
+select
+@max as 'TotalThreads',
+sum(active_Workers_count) as 'CurrentThreads',
+@max - sum(active_Workers_count) as 'AvailableThreads',
+sum(runnable_tasks_count) as 'WorkersWaitingForCpu',
+sum(work_queue_count) as 'RequestWaitingForThreads' ,
+sum(current_workers_count) as 'AssociatedWorkers'
+from
+sys.dm_os_Schedulers where status='VISIBLE ONLINE'

@@ -1,0 +1,9 @@
+/*reporte de servidores de produccion sin los servidores de DMZ y sin los availability groups*/
+SELECT TOP (1000) [Id]
+      ,[Servidor]
+      ,[IP]
+      ,[Version]
+      ,[Ambiente]
+      ,[MON_habilitado]
+  FROM [SqlToProd].[dbo].[Servers_SQL_PROD] where mon_habilitado = 1
+  and Ambiente not like '%DMZ' and servidor not like '%AG'

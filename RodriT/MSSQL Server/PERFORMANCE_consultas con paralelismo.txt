@@ -1,0 +1,56 @@
+[17:03] Shigueru Kato Maeda
+-- Consulta de query_idselect qsq.query_id, qsq.last_execution_time, qsqt.query_sql_text
+--captura la consulta en cuestion y luego la usamos para consultar el plan en el querystore
+
+from sys.query_store_query qsq
+inner join sys.query_store_query_text as qsqt
+on qsq.query_text_id = qsqt.query_text_id
+where qsqt.query_sql_text like '%DELETE%OUTPUT%'
+-- Consultas con paralelismo
+select top 50 p.query_id, cast(p.query_plan as xml) as query_plan,
+rs.*
+from sys.query_store_plan p inner join
+(
+select [plan_id]
+, sum(count_executions) as count_executions
+,avg([avg_duration]) as [avg_duration]
+,min([min_duration]) as [min_duration]
+,max([max_duration]) as [max_duration]
+,avg([avg_cpu_time]) as [avg_cpu_time]
+,min([min_cpu_time]) as [min_cpu_time]
+,max([max_cpu_time]) as [max_cpu_time]
+,avg([avg_logical_io_reads]) as [avg_logical_io_reads]
+,min([min_logical_io_reads]) as [min_logical_io_reads]
+,max([max_logical_io_reads]) as [max_logical_io_reads]
+,avg([avg_logical_io_writes]) as [avg_logical_io_writes]
+,min([min_logical_io_writes]) as [min_logical_io_writes]
+,max([max_logical_io_writes]) as [max_logical_io_writes]
+,avg([avg_physical_io_reads]) as [avg_physical_io_reads]
+,min([min_physical_io_reads]) as [min_physical_io_reads]
+,max([max_physical_io_reads]) as [max_physical_io_reads]
+,avg([avg_dop]) as [avg_dop]
+,min([min_dop]) as [min_dop]
+,max([max_dop]) as [max_dop]
+,avg([avg_query_max_used_memory]) as [avg_query_max_used_memory]
+,min([min_query_max_used_memory]) as [min_query_max_used_memory]
+,max([max_query_max_used_memory]) as [max_query_max_used_memory]
+,avg([avg_rowcount]) as [avg_rowcount]
+,min([min_rowcount]) as [min_rowcount]
+,max([max_rowcount]) as [max_rowcount]
+,avg([avg_num_physical_io_reads]) as [avg_num_physical_io_reads]
+,min([min_num_physical_io_reads]) as [min_num_physical_io_reads]
+,max([max_num_physical_io_reads]) as [max_num_physical_io_reads]
+,avg([avg_log_bytes_used]) as [avg_log_bytes_used]
+,min([min_log_bytes_used]) as [min_log_bytes_used]
+,max([max_log_bytes_used]) as [max_log_bytes_used]
+,avg([avg_tempdb_space_used]) as [avg_tempdb_space_used]
+,min([min_tempdb_space_used]) as [min_tempdb_space_used]
+,max([max_tempdb_space_used]) as [max_tempdb_space_used]
+from sys.query_store_runtime_stats
+group by plan_id
+) as rs
+on p.plan_id = rs.plan_id
+where p.is_parallel_plan = 1
+order by count_executions desc
+go
+

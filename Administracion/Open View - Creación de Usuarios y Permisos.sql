@@ -1,0 +1,97 @@
+--------------------
+--CREATE LOGIN
+--------------------
+CREATE LOGIN [LEDESMA_OPEN_VIEW]
+WITH PASSWORD=N'password',
+DEFAULT_DATABASE=[master],
+CHECK_EXPIRATION=OFF, CHECK_POLICY=OFF
+GO
+
+
+
+--------------------
+USE MASTER
+GO
+--------------------
+
+CREATE ROLE [ROL_LEDESMA_OPEN_VIEW]
+
+GRANT SELECT ON sys.sysprocesses TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.dm_tran_locks TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.sysconfigures TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.sysdatabases TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.databases TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.sysprocesses TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.sysfiles TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.sysindexes TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.sysperfinfo TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.sysobjects TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sys.sysdevices TO ROL_LEDESMA_OPEN_VIEW
+
+GRANT EXECUTE ON sys.xp_sqlagent_enum_jobs TO ROL_LEDESMA_OPEN_VIEW
+
+GRANT SELECT ON syscurconfigs TO ROL_LEDESMA_OPEN_VIEW
+
+GRANT VIEW SERVER STATE TO LEDESMA_OPEN_VIEW
+
+GRANT SELECT ON sys.dm_os_performance_counters TO ROL_LEDESMA_OPEN_VIEW
+
+
+
+
+
+--------------------
+USE MSDB
+GO
+--------------------
+CREATE ROLE [ROL_LEDESMA_OPEN_VIEW]
+
+GRANT SELECT ON sysjobs TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sysjobhistory TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sysjobsteps TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sysjobschedules TO ROL_LEDESMA_OPEN_VIEW
+GRANT SELECT ON sysjobs_view TO ROL_LEDESMA_OPEN_VIEW
+
+
+
+
+--------------------
+--GRANT CONNECT EN TODAS LAS BD
+--------------------
+DECLARE @name AS SYSNAME
+DECLARE @name_comillas AS VARCHAR(100)
+
+DECLARE db_cursor CURSOR FOR 
+	SELECT name
+	FROM sys.databases
+	WHERE source_database_id IS NULL
+	AND state = 0
+	AND is_in_standby = 0
+	AND user_access = 0
+
+OPEN db_cursor;
+
+FETCH NEXT FROM db_cursor
+INTO @name
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	
+	
+	IF @name <> 'master'
+	BEGIN
+		
+		EXEC('USE ['+@name+']; GO')
+		
+		PRINT db_name()
+		
+		CREATE USER [LEDESMA_OPEN_VIEW] FOR LOGIN [LEDESMA_OPEN_VIEW]
+	
+	END
+	
+	
+	FETCH NEXT FROM db_cursor
+	INTO @name
+END
+CLOSE db_cursor;
+DEALLOCATE db_cursor;

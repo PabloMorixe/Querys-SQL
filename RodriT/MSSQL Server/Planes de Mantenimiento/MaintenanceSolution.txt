@@ -1,0 +1,93 @@
+
+NUevo server de Exchange para SMTP   07/2016
+===================================
+
+10.241.163.33 puerto 25   (Balanceador)
+
+
+
+------------------------
+
+
+
+SET @BackupDirectory     = N'E:\MSSQL2K5\MSSQL.1\MSSQL\Backup'
+
+
+SET @OutputFileDirectory = N'B:\MSSQL\Log'
+
+-----------------------------------------------------------------------------------
+
+DESA
+========
+
+
+Backups
+-------
+
+Bases de Sistema   4:00 am
+
+Bases de Usuario   4:15 am
+
+
+
+Chequeos de Integridad
+======================
+
+Integridad de Sistema  Sabados 10 am 
+
+Integridad de Usuario  Sabados 10:30 am
+
+
+Optimizacion de Indices  Sabados 11:30 am
+
+----------------------
+
+Delete_Backuphistory    El primer Sabado 12 am de cada mes
+
+Purge_jobhistory        El primer Sabado 12:30 am de cada mes
+
+Output File Cleanup     Los domingos 12 am
+
+CommandLog Cleanup      Los domingos 12:30 am
+----------------------
+
+
+
+
+
+
+base.datos@supervielle.com.ar
+
+
+
+
+====================================================================================
+
+PROD    
+====
+
+Integridad de Usuario   Dom 10:30 am
+
+Integridad de Sistema   Dom 10 am
+
+
+Optimizacion de Indices   Dom 12 am
+
+
+Output File Cleanup   1er Dom del mes 9 am
+
+
+Delete_backuphistory  1er Dom del mes 9:30 am
+
+
+Purge_jobhistory      1er Dom del mes 10 am
+
+
+CommandLog Cleanup    1er Dom del mes 11 am
+
+
+
+
+
+
+

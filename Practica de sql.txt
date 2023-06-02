@@ -1,0 +1,87 @@
+use northwind
+
+select sum (5 + 5)* 5
+
+use pubs
+select lname + ', ' + substring(fname,1,1) + '.'
+as nombre, emp_id as idempleado
+from employee
+
+use pubs
+select fname + ' :, ' + substring(lname,1,3) + '.'
+as nombre, emp_id as idempleado
+from employee
+
+SELECT DATEPART(year, GETDATE()) AS 'Month Number'
+GO
+
+select convert(char(10), getdate(),2) as fecha
+
+select emp_id, lname, fname
+from employee
+where pub_id in ('0877', '9999')
+
+select fname
+from emploYEE
+--where fname like 'a%'
+ORDER BY FNAME
+HAVING FNAME in 'Anabela'
+
+select * from jobs
+select * from employees
+
+select fname, lname from employee a
+where exists (select * from jobs b where a.job_id = b.job_id)
+
+sp_helptext sp_help
+
+sp_spaceused jobs
+
+SELECT * FROM NOMBRES_APELLIDOS
+insert into NOMBRES_APELLIDOS
+values ('PEPO','LUIS')
+
+beGIN TRAN
+
+UPDATE NOMBRES_APELLIDOS
+SET NOMBRE = 'PIPI'
+WHERE NOMBRE = 'PEPE'
+
+SELECT * FROM NOMBRES_APELLIDOS
+
+IF @@ERROR > 0
+  ROLLBACK TRAN
+ELSE
+  COMMIT TRAN	
+
+PRINT @@VERSION
+
+PRINT 'HOLA'
+
+declare @n char (20)
+
+select @n = (select nombre = 'pipi')
+print @n
+UPDATE NOMBRES_APELLIDOS
+SET NOMBRE = 'PEPE'
+WHERE NOMBRE = @n
+
+if exists
+(select * from NOMBRES_APELLIDOS
+where nombre = 'pepe')
+begin
+  UPDATE NOMBRES_APELLIDOS
+  SET NOMBRE = 'PIPI'
+  WHERE NOMBRE = 'PEPE'
+end
+else
+begin
+  print 'no actualizo nada'
+end
+
+select title_id, cost = case
+  when price < 10 then 'economico'
+  when price between 10 and 20 then 'intermedio'
+else 'costoso'
+end
+from titles

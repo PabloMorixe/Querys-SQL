@@ -1,0 +1,8 @@
+Inicia una instancia de SQL Server con la configuración mínima. Esta opción es útil si el valor de una opción de configuración (por ejemplo, la confirmación excesiva de memoria) ha impedido el inicio del servidor.
+
+
+
+Procedimiento
+-------------
+
+Inicio\Ejecutar: "net start MSSQLSERVER /f"

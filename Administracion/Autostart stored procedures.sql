@@ -1,0 +1,4 @@
+--Consulta en la BD Master todos los SP marcados como Autostart
+SELECT ROUTINE_NAME
+FROM MASTER.INFORMATION_SCHEMA.ROUTINES
+WHERE OBJECTPROPERTY(OBJECT_ID(ROUTINE_NAME),'ExecIsStartup') = 1

@@ -1,0 +1,2 @@
+ALTER DATABASE [base de datos] SET OFFLINE
+ALTER DATABASE [base de datos] SET ONLINE

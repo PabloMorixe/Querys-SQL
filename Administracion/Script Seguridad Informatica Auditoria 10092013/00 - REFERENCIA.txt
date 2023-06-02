@@ -1,0 +1,17 @@
+01 - Query Listado de bases de datos L2SAP
+	Este script permite conocer las bases de datos de usuarios que se encuentran ON LINE, es decir en uso.
+
+02 - Query reporte permisos Servidor
+	Este script permite conocer los roles sysadmin de la instancia de base de datos. Unicamente aplica para los DBA, y cuenta de servicio de base de datos.
+	
+03 - Query reporte permisos a Nivel de Instancia
+	Este script permite conocer los los permisos a nivel de funcion del motor SQL Server para cada uno de los logins SQL Server, la idea es poder customizar el listado sabana que trae por default en la instalación del motor de base de datos.
+	
+04 - Query Control de Accesos Trace
+	Permite conocer los logins a la instacia de base de datos.
+
+05 - Query lista roles de base de datos
+	Lista los roles y los miembros de cada rol para cada base de datos.
+
+06 - Query Audotoria de Accesos
+	Lista los accesos con herramientas de desarrollo usando logins de Aplicación

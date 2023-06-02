@@ -1,0 +1,2 @@
+ SELECT 'ALTER TABLE ' + TABLE_SCHEMA + '.[' + TABLE_NAME 	+ '] DROP CONSTRAINT [' + CONSTRAINT_NAME + ']' 	FROM information_schema.table_constraints
+	WHERE CONSTRAINT_TYPE = 'FOREIGN KEY'

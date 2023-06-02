@@ -1,0 +1,1 @@
+Ejecutar primero el escrip 1 con la creacion de la tabla y en segundo lugar ejecutar el 2 script para que se genere el job de recoleccion de datos en la table que creamos anteriormente
